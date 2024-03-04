@@ -6,7 +6,10 @@ import os
 import logging
 import time
 from itertools import permutations, combinations
-from collections import MutableMapping, MutableSet
+try:
+    from collections.abc import MutableMapping, MutableSet
+except ImportError:
+    from collections import MutableMapping, MutableSet
 from subprocess import PIPE
 import re
 from glob import glob
@@ -150,13 +153,13 @@ class IsotropySession:
             for now the setting options can only be set
             when creating an Isotropy object, not changed later
         """
-        iso_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'iso/')
+        iso_location = os.environ.get('ISOLOCATION')
         logger.debug("""starting isotropy session in {}
                         using isotropy in: {}""".format(
                             os.getcwd(), iso_location))
         self.iso_process = Command(os.path.join(iso_location, 'iso'),
                                    stdout=Capture(buffer_size=1),
-                                   env={"ISODATA": iso_location})
+                                   env={"ISODATA": iso_location+'/'})
         try:
             self.iso_process.run(input=PIPE, async_=True)
         except FileNotFoundError:
@@ -168,7 +171,7 @@ class IsotropySession:
             this_line = self.read_iso_line()
             if this_line: # don't log until isotropy responds
                 logger.debug("isotropy: {}".format(this_line))
-            if this_line == 'Use "VALUE IRREP VERSION" to change version':
+            if this_line == 'Current setting is International (new ed.) with conventional basis vectors.':
                 keep_reading = False
 
         self.screen = 999  # exploit this too make parsing output easier?
