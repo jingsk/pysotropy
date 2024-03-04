@@ -3,7 +3,7 @@ import sys
 import logging
 from fractions import Fraction
 import numpy as np
-import pymatgen as pmg
+from pymatgen.core import Structure, Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.optimization.linear_assignment import LinearAssignment
@@ -147,13 +147,13 @@ def match_structures(s1, s2, scale_lattice=False, rh_only=True):
                        decimals=5)
     if scale_lattice:
         hs_lat = struct_hs_supercell.lattice
-        hs_std = pmg.Lattice.from_lengths_and_angles(hs_lat.abc, hs_lat.angles)
+        hs_std = Lattice.from_lengths_and_angles(hs_lat.abc, hs_lat.angles)
         ls_lat = s2.lattice
-        ls_std = pmg.Lattice.from_lengths_and_angles(ls_lat.abc, ls_lat.angles)
+        ls_std = Lattice.from_lengths_and_angles(ls_lat.abc, ls_lat.angles)
         for aligned, rot, scale in hs_lat.find_all_mappings(hs_std):
             if (abs(aligned.matrix - hs_lat.matrix) < 1.e-3).all():
-                strained_hs_lattice = pmg.Lattice(np.inner(ls_std.matrix, rot))
-        struct_hs_supercell = pmg.Structure(strained_hs_lattice,
+                strained_hs_lattice = Lattice(np.inner(ls_std.matrix, rot))
+        struct_hs_supercell = Structure(strained_hs_lattice,
                                             struct_hs_supercell.species,
                                             [site.frac_coords for site in struct_hs_supercell])
     displacements = []
@@ -253,7 +253,7 @@ def get_distortion_dec_struct(wycks, struct_to_match, high_sym_wyckoff, struct_h
     logger.debug("species:\n{}".format(species))
     logger.debug("proj_vecs:\n{}".format(proj_vecs))
     lat = struct_to_match.lattice
-    dist_struct = pmg.Structure(lat, species, coords, site_properties={"projvecs": proj_vecs})
+    dist_struct = Structure(lat, species, coords, site_properties={"projvecs": proj_vecs})
     logger.debug("dist_struct:\n{}".format(dist_struct))
 
     # sm_dist = StructureMatcher(ltol = 0.02, primitive_cell=False, allow_subset=True)
@@ -536,8 +536,8 @@ if __name__ == '__main__':
     file_handler.setLevel(logging.DEBUG)
     logger.addHandler(file_handler)
 
-    struct_hs = pmg.Structure.from_file(sys.argv[1])
-    struct_ls = pmg.Structure.from_file(sys.argv[2])
+    struct_hs = Structure.from_file(sys.argv[1])
+    struct_ls = Structure.from_file(sys.argv[2])
 
     irrep_decomposition_data = get_mode_decomposition(struct_hs, struct_ls, nonzero_only=True)
 
